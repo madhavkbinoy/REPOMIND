@@ -1,0 +1,40 @@
+# Python
+venv/
+*.pyc
+__pycache__/
+*.egg-info/
+.eggs/
+
+# Data
+db/
+data/raw/
+qdrant_storage/
+*.db
+*.sqlite
+
+# Logs
+*.log
+api.log
+frontend.log
+nohup.out
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
