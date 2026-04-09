@@ -199,7 +199,7 @@ tail -f api.log
 
 ## Current Status
 
-- **Indexed:** 500 kubelet issues + 50 kubelet PRs = 1426 chunks
+- **Indexed:** 871 kubelet issues + 943 kubelet PRs + 13073 commit messages 
 - **Anti-hallucination:** 3-layer system (strict prompts, citation verification, UI warnings)
 - **Confidence threshold:** 0.40 (tuneable in .env)
 
