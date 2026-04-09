@@ -8,6 +8,54 @@ A RAG chatbot that surfaces design decisions, architectural rationale, and undoc
 
 ---
 
+## Implemented Features
+
+### 1. Authentication System
+- **User Registration:** `/api/register` - Create new user accounts
+- **User Login:** `/api/login` - Authenticate and get session token
+- **Session Management:** Token-based sessions (7-day expiry)
+- **Password Hashing:** SHA-256
+
+### 2. Chat Persistence
+- **Save Messages:** `/api/history` (POST) - Store chat messages per user
+- **Retrieve History:** `/api/history` (GET) - Load user's chat history
+- **Clear History:** `/api/history` (DELETE) - Delete user's chat history
+- **Per-User Storage:** Chat history linked to user_id
+
+### 3. Admin Dashboard
+- **Out-of-Scope Query Tracking:** Tracks queries that couldn't be answered
+- **Query Statistics:** View frequency of out-of-scope queries
+- **Admin Endpoints:** `/api/admin/queries` (GET, DELETE)
+- **Admin Credentials:** Configured via `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env`
+
+### 4. Retrieval Pipeline
+- **Query Rewriting:** Expand abbreviated terms (e.g., "kubelet" → "kubelet pod lifecycle management")
+- **RRF Fusion:** Reciprocal Rank Fusion combining vector + BM25 scores
+- **Reranking:** CrossEncoder for precise relevance ordering
+- **Link Expansion:** Map file paths to related PRs/issues
+
+### 5. Generation with Anti-Hallucination
+- **Citation Extraction:** Parse [#N] citations from LLM response
+- **3-Layer Verification:**
+  1. Extract all citations from response
+  2. Verify each citation matches source content
+  3. Remove invalid citations from final response
+- **Fallback Handling:** When confidence < threshold, show fallback message
+- **Source Attribution:** Links to original GitHub issues/PRs
+
+### 6. Frontend (Glassmorphism UI)
+- **Framework:** React + Vite
+- **Styling:** Glassmorphism with blur effects, purple gradient background
+- **Features:**
+  - Login/Register modal
+  - Real-time streaming responses
+  - Auto-scroll to latest message
+  - Source links with citation highlighting
+  - Admin dashboard modal
+  - Clear chat / Logout functionality
+
+---
+
 ## Quick Start
 
 ### Prerequisites

@@ -31,19 +31,24 @@ def rewrite_query(question: str, history: list = []) -> str:
         max_tokens=100,
         messages=[{'role': 'user', 'content': REWRITE_PROMPT.format(history=hist or 'none', question=question)}]
     )
-    return resp.choices[0].message.content.strip()
+    content = resp.choices[0].message.content
+    return content.strip() if content else ""
 
 
 def _fetch_by_number(collection: str, number: int, stype: str) -> list[dict]:
-    results = qdrant.scroll(
-        collection_name=collection,
-        scroll_filter=Filter(must=[
-            FieldCondition(key='number',      match=MatchValue(value=number)),
-            FieldCondition(key='source_type', match=MatchValue(value=stype)),
-        ]),
-        limit=2, with_payload=True
-    )
-    return [{'id': r.id, **r.payload} for r in results[0]]
+    try:
+        results = qdrant.scroll(
+            collection_name=collection,
+            scroll_filter=Filter(must=[
+                FieldCondition(key='number',      match=MatchValue(value=number)),
+                FieldCondition(key='source_type', match=MatchValue(value=stype)),
+            ]),
+            limit=2, with_payload=True
+        )
+        points = results[0] if results and results[0] else []
+        return [{'id': r.id, **r.payload} for r in points]
+    except Exception:
+        return []
 
 
 def expand_with_links(chunks: list[dict], collection: str) -> list[dict]:
@@ -79,10 +84,14 @@ def retrieve(question: str, collection: str, history: list = []):
     rewritten  = rewrite_query(question, history)
     vec_hits   = vector_search(rewritten, collection, k=20)
     bm25_hits  = bm25_search(rewritten, k=20)
+    
+    if not vec_hits and not bm25_hits:
+        return [], 0.0, rewritten
+    
     fused_ids  = _rrf(vec_hits, bm25_hits)
     vec_map    = {h['id']: h for h in vec_hits}
     candidates = [vec_map[i] for i in fused_ids if i in vec_map]
     best_score = vec_hits[0]['score'] if vec_hits else 0.0
-    top        = rerank(rewritten, candidates[:20], top_n=7)
-    final      = expand_with_links(top, collection)
+    top        = rerank(rewritten, candidates[:20], top_n=7) if candidates else []
+    final      = expand_with_links(top, collection) if top else []
     return final, best_score, rewritten

@@ -59,6 +59,87 @@ def chunk_issue(issue: dict, repo: str) -> list[dict]:
     return chunks
 
 
+def chunk_code_file(file_path: str, content: str, repo: str) -> list[dict]:
+    """Chunk a Go source file into manageable pieces."""
+    prefix = (
+        f"[CODE FILE: {file_path}]\n"
+        f"File path: {file_path}\n"
+        f"---\n"
+    )
+    
+    budget = MAX_TOKENS - count_tokens(prefix) - 10
+    chunks = []
+    
+    lines = content.split('\n')
+    current = ''
+    idx = 0
+    
+    for line in lines:
+        if count_tokens(current) + count_tokens(line) > budget:
+            if current.strip():
+                chunks.append({
+                    'text':        prefix + current,
+                    'source_type': 'code',
+                    'repo':        repo,
+                    'number':      None,
+                    'title':       file_path.split('/')[-1],
+                    'url':         f"https://github.com/{repo}/blob/master/{file_path}",
+                    'labels':      [],
+                    'state':       None,
+                    'chunk_index': idx,
+                    'file_path':   file_path,
+                })
+                idx += 1
+            current = truncate_to_tokens(current, OVERLAP) + line + '\n'
+        else:
+            current += line + '\n'
+    
+    if current.strip():
+        chunks.append({
+            'text':        prefix + current,
+            'source_type': 'code',
+            'repo':        repo,
+            'number':      None,
+            'title':       file_path.split('/')[-1],
+            'url':         f"https://github.com/{repo}/blob/master/{file_path}",
+            'labels':      [],
+            'state':       None,
+            'chunk_index': idx,
+            'file_path':   file_path,
+        })
+    return chunks
+
+
+def chunk_commit(commit: dict, repo: str) -> list[dict]:
+    """Chunk a commit into a single chunk."""
+    message = commit.get('message', '')
+    author = commit.get('author', {}) or {}
+    author_name = author.get('name', 'unknown')
+    committed_date = commit.get('committedDate', '')
+    oid = commit.get('oid', '')
+    
+    prefix = (
+        f"[COMMIT {oid[:8]}]\n"
+        f"Author: {author_name}\n"
+        f"Date: {committed_date}\n"
+        f"---\n"
+    )
+    
+    return [{
+        'text':        prefix + message,
+        'source_type': 'commit',
+        'repo':        repo,
+        'number':      None,
+        'title':       message.split('\n')[0][:100] if message else 'No message',
+        'url':         f"https://github.com/{repo}/commit/{oid}",
+        'labels':      [],
+        'state':       None,
+        'chunk_index': 0,
+        'file_path':   None,
+    }]
+
+
+
 def build_pr_prefix(pr: dict) -> str:
     labels = ', '.join(l['name'] for l in (pr.get('labels', {}).get('nodes') or []))
     files  = [f['path'] for f in (pr.get('files', {}).get('nodes') or [])][:5]
