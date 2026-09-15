@@ -37,21 +37,20 @@ echo "✓ Database initialized"
 # Scrape kubelet data
 echo ""
 echo "=== Scraping kubelet data ==="
-echo "This takes 15-30 minutes for MAX_PRS=50"
-python ingestion/github_scraper.py
-echo "✓ Scraping complete"
+echo "Blobless clone + targeted fetch. ~20-30 minutes, resumable."
+python ingestion/scraper_v2.py all
+echo "✓ Commits, PRs and issues scraped"
+
+echo ""
+echo "=== Scraping sig-node KEPs ==="
+python ingestion/kep_scraper.py
+echo "✓ KEPs and community docs scraped"
 
 # Index data
 echo ""
 echo "=== Indexing data to Qdrant ==="
 python index_small.py
 echo "✓ Indexing complete"
-
-# Build links
-echo ""
-echo "=== Building link table ==="
-python ingestion/linker.py
-echo "✓ Link table complete"
 
 echo ""
 echo "=== Setup Complete! ==="

@@ -13,7 +13,6 @@ def full_index_repo(repo: str):
     from ingestion.github_scraper import scrape_issues, scrape_prs
     from ingestion.chunker        import chunk_issue, chunk_pr
     from ingestion.embedder       import upsert_chunks
-    from ingestion.linker         import build_links_from_prs
     from db.setup                 import create_collection
 
     owner, name = repo.split('/')
@@ -32,7 +31,6 @@ def full_index_repo(repo: str):
 
     print(f'Indexing {len(chunks)} chunks for {repo}')
     upsert_chunks(chunks, collection)
-    build_links_from_prs(repo)
     print('Full index complete')
 
 
