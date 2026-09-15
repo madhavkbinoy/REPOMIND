@@ -1,11 +1,16 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import chat, index, webhook, auth, admin
 
 app = FastAPI(title='RepoMind')
 
+origins = [o.strip() for o in
+           os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173').split(',') if o.strip()]
+
 app.add_middleware(CORSMiddleware,
-    allow_origins=['http://localhost:5173'],
+    allow_origins=origins,
     allow_methods=['*'],
     allow_headers=['*'],
     allow_credentials=True,
