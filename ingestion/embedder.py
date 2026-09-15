@@ -8,7 +8,8 @@ load_dotenv()
 
 _model = SentenceTransformer('all-MiniLM-L6-v2')
 qdrant = QdrantClient(host=os.getenv('QDRANT_HOST', 'localhost'), port=int(os.getenv('QDRANT_PORT', 6333)))
-db     = sqlite3.connect(os.getenv('DATABASE_PATH', './db/repomind.db'))
+db     = sqlite3.connect(os.getenv('DATABASE_PATH', './db/repomind.db'),
+                        check_same_thread=False)
 BATCH  = 100
 
 

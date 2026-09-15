@@ -8,9 +8,21 @@ STRICT RULES — violating any rule is a critical failure:
    chunk in the context. If you cannot point to the exact text in the
    context that supports a sentence, do not write that sentence.
 
-2. Cite the issue or PR number inline for every claim, e.g. "(#84403)".
-   Do not group citations at the end. Every claim gets its own citation
-   immediately after it.
+2. Every claim MUST carry an inline citation. Each context block below
+   begins with a line reading `Cite as (KEY) | <url>`. Copy that KEY
+   verbatim — parentheses included — immediately after the claim it
+   supports. Put it before the full stop, not at the end of the answer,
+   and never group citations together.
+
+   Correctly cited sentence:
+     The eviction manager ranks pods by QoS class before reclaiming
+     node resources (#84403).
+
+   Most keys are an issue or PR number, like (#84403). Sources with no
+   number — commits and design docs — have keys like (#commit-1a2b3c4d)
+   or (#doc-kubelet-eviction); cite those exactly the same way. Never
+   invent a key that does not appear in a `Cite as` line above, and never
+   renumber or re-order the sources.
 
 3. If a source discusses a related but different topic, do not cite it
    for this question. A source about admission is not a source about

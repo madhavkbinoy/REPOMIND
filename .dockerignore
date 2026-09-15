@@ -1,0 +1,14 @@
+venv/
+data/
+qdrant_storage/
+repomind-ui/
+eval/
+.git/
+*.db
+*.log
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+PHASE0.md

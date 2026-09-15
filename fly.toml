@@ -1,0 +1,48 @@
+# Fly.io deployment. See DEPLOY.md for the full procedure.
+app = "repomind"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DATABASE_PATH = "/data/repomind.db"
+  QDRANT_PORT   = "6333"
+
+[http_service]
+  internal_port = 8000
+  force_https   = true
+
+  # Scale-to-zero plus a 17s cold start means the first visitor gets a page that
+  # looks broken. Keeping one machine warm is the difference between a demo that
+  # works and a link that embarrasses you.
+  auto_stop_machines  = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type       = "requests"
+    soft_limit = 8
+    hard_limit = 16
+
+[[vm]]
+  # 1 GB is the floor: MiniLM + cross-encoder + torch, plus BM25 holding all
+  # 67,161 chunks in memory (~2.2s to load). Dropping to 512 MB OOMs on first query.
+  size       = "shared-cpu-1x"
+  memory     = "1gb"
+  cpu_kind   = "shared"
+  cpus       = 1
+
+# SQLite lives on a volume: users, sessions, chat history and the BM25 corpus.
+[[mounts]]
+  source      = "repomind_data"
+  destination = "/data"
+
+[checks.health]
+  type     = "http"
+  port     = 8000
+  path     = "/health"
+  interval = "30s"
+  timeout  = "5s"
+  # Generous: the container is loading two models before it can answer.
+  grace_period = "60s"

@@ -1,0 +1,22 @@
+{"question": "How does the etcd raft implementation handle leader election?", "expect": "refusal"}
+{"question": "What algorithm does kube-scheduler use for bin packing?", "expect": "refusal"}
+{"question": "Why does the API server use etcd instead of a relational database?", "expect": "refusal"}
+{"question": "How does kube-proxy implement iptables rules for services?", "expect": "refusal"}
+{"question": "What is the reasoning behind the CRD validation schema design?", "expect": "refusal"}
+{"question": "How does the cloud controller manager handle node lifecycle?", "expect": "refusal"}
+{"question": "Why was the in-tree cloud provider code deprecated?", "expect": "refusal"}
+{"question": "How does kubeadm bootstrap a control plane?", "expect": "refusal"}
+{"question": "What consistency guarantees does the watch cache provide?", "expect": "refusal"}
+{"question": "How does the scheduler framework handle plugin ordering?", "expect": "refusal"}
+{"question": "Why does Kubernetes use a declarative API instead of imperative commands?", "expect": "refusal"}
+{"question": "How is leader election implemented in controller-manager?", "expect": "refusal"}
+{"question": "What is the design rationale behind admission webhooks?", "expect": "refusal"}
+{"question": "How does the garbage collector determine owner references?", "expect": "refusal"}
+{"question": "Why does the HPA use a stabilization window?", "expect": "refusal"}
+{"question": "How does CNI plugin chaining work?", "expect": "refusal"}
+{"question": "What was the reasoning for removing dockershim from the scheduler?", "expect": "refusal"}
+{"question": "How does the service mesh sidecar injection work in Istio?", "expect": "refusal"}
+{"question": "How do I make sourdough bread?", "expect": "refusal"}
+{"question": "What is the capital of France?", "expect": "refusal"}
+{"question": "Write me a Python function to reverse a linked list.", "expect": "refusal"}
+{"question": "How does PostgreSQL implement MVCC?", "expect": "refusal"}

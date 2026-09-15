@@ -3,9 +3,11 @@ import json, asyncio
 import sqlite3
 import hashlib
 import secrets
-from fastapi import APIRouter, HTTPException, Response
+import bcrypt
+from fastapi import APIRouter, HTTPException, Response, Depends
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from ..deps import current_user
 
 load_dotenv()
 
@@ -21,11 +23,21 @@ def get_db():
 
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-def verify_password(password: str, password_hash: str) -> bool:
-    return hash_password(password) == password_hash
+def verify_password(password: str, stored: str) -> bool:
+    """Verify against bcrypt, falling back to the legacy unsalted sha256 scheme.
+
+    Legacy hashes are upgraded in place on the next successful login -- see login().
+    """
+    if stored.startswith('$2'):
+        return bcrypt.checkpw(password.encode(), stored.encode())
+    return hashlib.sha256(password.encode()).hexdigest() == stored
+
+
+def is_legacy_hash(stored: str) -> bool:
+    return not stored.startswith('$2')
 
 
 def create_session(user_id: int) -> str:
@@ -78,7 +90,14 @@ def login(req: LoginRequest):
         
         if not user or not verify_password(req.password, user['password_hash']):
             raise HTTPException(status_code=401, detail='Invalid credentials')
-        
+
+        # Transparent migration: re-hash legacy sha256 rows now that we know the
+        # plaintext is correct. No password reset, no user-visible change.
+        if is_legacy_hash(user['password_hash']):
+            conn.execute('UPDATE users SET password_hash = ? WHERE id = ?',
+                         (hash_password(req.password), user['id']))
+            conn.commit()
+
         token = create_session(user['id'])
         return {'token': token, 'user_id': user['id'], 'username': user['username'], 'is_admin': bool(user['is_admin'])}
     finally:
@@ -92,37 +111,20 @@ def logout(response: Response):
 
 
 @router.get('/me')
-def get_me(token: str = None):
-    if not token:
-        return {'authenticated': False}
-    
-    conn = get_db()
-    try:
-        session = conn.execute(
-            'SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime("now")',
-            (token,)
-        ).fetchone()
-        
-        if not session:
-            return {'authenticated': False}
-        
-        user = conn.execute('SELECT id, username, is_admin FROM users WHERE id = ?',
-                           (session['user_id'],)).fetchone()
-        
-        return {'authenticated': True, 'user_id': user['id'], 'username': user['username'], 'is_admin': bool(user['is_admin'])}
-    finally:
-        conn.close()
+def get_me(user: dict = Depends(current_user)):
+    return {'authenticated': True, **user}
 
 
 # Chat history endpoints
 @router.get('/history')
-def get_history(user_id: int):
+def get_history(user: dict = Depends(current_user)):
+    uid  = user['user_id']
     conn = get_db()
     try:
         messages = conn.execute(
             '''SELECT role, content FROM chat_history 
                WHERE user_id = ? ORDER BY created_at ASC''',
-            (user_id,)
+            (uid,)
         ).fetchall()
         return [{'role': m['role'], 'content': m['content']} for m in messages]
     finally:
@@ -130,12 +132,13 @@ def get_history(user_id: int):
 
 
 @router.post('/history')
-def add_message(user_id: int, role: str, content: str):
+def add_message(role: str, content: str, user: dict = Depends(current_user)):
+    uid  = user['user_id']
     conn = get_db()
     try:
         conn.execute(
             'INSERT INTO chat_history (user_id, role, content) VALUES (?, ?, ?)',
-            (user_id, role, content)
+            (uid, role, content)
         )
         conn.commit()
         return {'ok': True}
@@ -144,10 +147,11 @@ def add_message(user_id: int, role: str, content: str):
 
 
 @router.delete('/history')
-def clear_history(user_id: int):
+def clear_history(user: dict = Depends(current_user)):
+    uid  = user['user_id']
     conn = get_db()
     try:
-        conn.execute('DELETE FROM chat_history WHERE user_id = ?', (user_id,))
+        conn.execute('DELETE FROM chat_history WHERE user_id = ?', (uid,))
         conn.commit()
         return {'ok': True}
     finally:

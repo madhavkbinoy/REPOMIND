@@ -5,6 +5,11 @@ import AdminDashboard from './AdminDashboard'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const REPO    = 'kubernetes/kubernetes'
 
+const authHeaders = () => {
+  const token = localStorage.getItem('token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export default function App() {
   const [messages, setMessages] = useState([])
   const [input,    setInput   ] = useState('')
@@ -24,12 +29,15 @@ export default function App() {
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (token) {
-      fetch(`${API_URL}/api/me?token=${token}`)
-        .then(r => r.json())
+      fetch(`${API_URL}/api/me`, { headers: authHeaders() })
+        .then(r => {
+          if (!r.ok) throw new Error('Invalid session')
+          return r.json()
+        })
         .then(data => {
           if (data.authenticated) {
             setUser(data)
-            loadChatHistory(data.user_id)
+            loadChatHistory()
           }
         })
         .catch(() => localStorage.removeItem('token'))
@@ -40,9 +48,9 @@ export default function App() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  async function loadChatHistory(userId) {
+  async function loadChatHistory() {
     try {
-      const res = await fetch(`${API_URL}/api/history?user_id=${userId}`)
+      const res = await fetch(`${API_URL}/api/history`, { headers: authHeaders() })
       const history = await res.json()
       if (history.length > 0) {
         setMessages(history.map(m => ({ role: m.role, content: m.content })))
@@ -80,7 +88,7 @@ export default function App() {
       if (authMode === 'register') {
         setMessages([])
       } else {
-        loadChatHistory(data.user_id)
+        loadChatHistory()
       }
     } catch (e) {
       setAuthError('Network error')
@@ -96,7 +104,7 @@ export default function App() {
 
   async function clearChat() {
     if (user) {
-      await fetch(`${API_URL}/api/history?user_id=${user.user_id}`, { method: 'DELETE' })
+      await fetch(`${API_URL}/api/history`, { method: 'DELETE', headers: authHeaders() })
     }
     setMessages([])
   }
@@ -113,13 +121,12 @@ export default function App() {
     const payload = { 
       question, 
       repo: REPO, 
-      history,
-      user_id: user?.user_id || null
+      history
     }
 
     const res = await fetch(`${API_URL}/api/chat`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body:    JSON.stringify(payload),
     })
 
@@ -169,11 +176,15 @@ export default function App() {
             ...prev.slice(0, -1),
             {
               role:             'assistant',
-              content:          answer,
+              // Streamed tokens are unverified by construction. The done frame
+              // carries the answer after citation verification, so prefer it —
+              // using the accumulated text here silently discarded the check.
+              content:          data.answer ?? answer,
               sources:          data.sources || [],
               is_fallback:      data.is_fallback,
               citations_valid:  data.citations_valid,
               invalid_citations: data.invalid_citations || [],
+              verification_ran: data.verification_ran,
             },
           ])
         }
@@ -189,10 +200,16 @@ export default function App() {
     }
   }
 
+  // Must stay in sync with generation/generator.py::citation_key — that is the
+  // single definition of a citation. Keys are (#84403) for issues/PRs and
+  // (#commit-1a2b3c4d) / (#doc-kubelet-eviction) for sources with no number,
+  // which the old /\(#\d+\)/ silently left unhighlighted.
+  const CITATION = /(\(#[A-Za-z0-9][\w.-]*\))/g
+
   function renderContent(content) {
-    const parts = content.split(/(\(#\d+\))/g)
+    const parts = content.split(CITATION)
     return parts.map((part, i) => {
-      if (part.match(/\(#\d+\)/)) {
+      if (part.match(/^\(#[A-Za-z0-9][\w.-]*\)$/)) {
         return <span key={i} className="citation">{part}</span>
       }
       return part
@@ -286,6 +303,13 @@ export default function App() {
                 <p className="message__warning">
                   ⚠ Some citations were removed — they did not match the source content.
                   The answer reflects only what the indexed issues directly state.
+                </p>
+              )}
+
+              {m.verification_ran === false && (
+                <p className="message__warning">
+                  ⚠ Citation verification could not run for this answer, so the
+                  citations below are unchecked.
                 </p>
               )}
 

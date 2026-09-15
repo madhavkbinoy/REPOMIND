@@ -5,9 +5,14 @@ __pycache__/
 *.egg-info/
 .eggs/
 
-# Data
+# Data — all of it is derived and regenerable:
+#   data/raw          scraped JSON      (ingestion/scraper_v2.py, kep_scraper.py)
+#   data/repo-clone   blobless clone    (251 MB)
+#   data/enhancements kubernetes/enhancements clone
+#   data/community    kubernetes/community clone
+# 577 MB total. Never commit it.
 db/
-data/raw/
+data/
 qdrant_storage/
 *.db
 *.sqlite
@@ -38,3 +43,7 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+# Eval: the harness and the question sets ARE committed -- they're maintained
+# artifacts, and a golden set nobody can see is not evidence. Only caches are not.
+eval/.rewrite_cache.json
+eval/*.log
