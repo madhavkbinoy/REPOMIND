@@ -1,13 +1,14 @@
 import os, uuid, sqlite3
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
+from db.qdrant_client_factory import get_client
 from qdrant_client.models import PointStruct
 from dotenv import load_dotenv
 
 load_dotenv()
 
 _model = SentenceTransformer('all-MiniLM-L6-v2')
-qdrant = QdrantClient(host=os.getenv('QDRANT_HOST', 'localhost'), port=int(os.getenv('QDRANT_PORT', 6333)))
+qdrant = get_client()
 db     = sqlite3.connect(os.getenv('DATABASE_PATH', './db/repomind.db'),
                         check_same_thread=False)
 BATCH  = 100

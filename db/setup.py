@@ -1,13 +1,12 @@
 import os, sqlite3
 from qdrant_client import QdrantClient
+from db.qdrant_client_factory import get_client
 from qdrant_client.models import Distance, VectorParams, PayloadSchemaType
 from dotenv import load_dotenv
 
 load_dotenv()
 
-qdrant = QdrantClient(
-    host=os.getenv('QDRANT_HOST', 'localhost'),
-    port=int(os.getenv('QDRANT_PORT', 6333))
+qdrant = get_client()
 )
 
 

@@ -1,5 +1,6 @@
 import logging, os, time
 from qdrant_client import QdrantClient
+from db.qdrant_client_factory import get_client, describe
 from qdrant_client.http.exceptions import UnexpectedResponse
 from ingestion.embedder import embed_texts
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ log.setLevel(os.getenv('LOG_LEVEL', 'INFO'))
 QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
 QDRANT_PORT = int(os.getenv('QDRANT_PORT', 6333))
 
-qdrant = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+qdrant = get_client()   # server, embedded or cloud -- see db/qdrant_client_factory
 
 # Cosine floor below which a hit is not returned at all. 0.25 is the value every number
 # in eval/results.md was measured with and stays the default -- the env var exists so the
