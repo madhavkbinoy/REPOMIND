@@ -1,0 +1,36 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      # CPU-only torch: the default wheel pulls ~2 GB of CUDA libraries that no
+      # CI runner here will ever use.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt pytest
+
+      # The tokenizer (a few MB) is fetched on import; the larger sentence-transformer
+      # and cross-encoder weights are never loaded by these tests.
+      - name: Cache Hugging Face
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-minilm-tokenizer
+
+      - name: Run tests
+        run: pytest tests/ -q
