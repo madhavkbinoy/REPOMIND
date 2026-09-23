@@ -362,3 +362,32 @@ def test_split_pieces_are_substrings_of_the_original():
     text = '[PR #99095 - MERGED]\nTitle: Prevent DiskPressure. ' + 'body text. ' * 300
     for piece in split_by_tokens(text, 250, overlap=32):
         assert piece in text, 'pieces must be verbatim slices, never decoded tokens'
+
+
+def test_model_defaults_match_the_shipped_config():
+    """A code default that disagrees with .env.example is a silent configuration bug:
+    a fresh clone, CI, or a container missing the var quietly runs a different model
+    than the one the results were measured with.
+
+    This mattered concretely -- pipeline.py defaulted MODEL_FAST to openai/gpt-oss-20b
+    while .env.example ships qwen/qwen3.8-27b. gpt-oss-20b is a reasoning model and
+    spends 175-364 tokens reasoning about a five-word query rewrite; Qwen emits 7.
+    """
+    import re
+
+    root = Path(__file__).resolve().parent.parent
+    shipped = dict(re.findall(r'^(GROQ_MODEL\w*)=(.+)$',
+                              (root / '.env.example').read_text(), re.MULTILINE))
+
+    code = {}
+    for path in ['retrieval/pipeline.py', 'generation/generator.py', 'api/routes/chat.py']:
+        for var, default in re.findall(r"os\.getenv\('(GROQ_MODEL\w*)',\s*'([^']+)'\)",
+                                       (root / path).read_text()):
+            code[var] = default
+
+    assert code, 'no GROQ_MODEL defaults found -- did the pattern change?'
+    for var, default in code.items():
+        assert var in shipped, f'{var} has a code default but is missing from .env.example'
+        assert default == shipped[var], (
+            f'{var}: code defaults to {default!r} but .env.example ships '
+            f'{shipped[var]!r} -- they must agree')

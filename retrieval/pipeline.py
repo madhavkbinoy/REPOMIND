@@ -9,7 +9,7 @@ from .reranker       import rerank
 load_dotenv()
 
 llm    = Groq(api_key=os.getenv('GROQ_API_KEY'))
-MODEL_FAST = os.getenv('GROQ_MODEL_FAST', 'openai/gpt-oss-20b')
+MODEL_FAST = os.getenv('GROQ_MODEL_FAST', 'qwen/qwen3.8-27b')
 
 # How many chunks reach the model. This is a context-volume decision, not a count:
 # chunks are 256 tokens, so TOP_N=7 gave ~1,800 tokens -- far too little, and the model
