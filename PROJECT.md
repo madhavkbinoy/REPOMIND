@@ -516,6 +516,7 @@ class of bug that accounted for most of §6.
 | File | What it holds |
 |---|---|
 | `README.md` | The pitch: problem, results, how it works |
+| **`HOW_IT_WORKS.md`** | **Deep mechanics** — every stage in detail, the concepts, a traced request |
 | `PROJECT.md` | This document — the full walkthrough |
 | `DECISIONS.md` | Every design decision, the alternative rejected, and why |
 | `agent.md` | Architecture brief for working in the codebase |

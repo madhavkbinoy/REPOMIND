@@ -304,7 +304,8 @@ Runs on every push via `.github/workflows/tests.yml`.
 
 | File | What it holds |
 |---|---|
-| **[PROJECT.md](PROJECT.md)** | Full walkthrough — architecture, results, every bug, open questions |
+| **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** | **Deep technical explanation** — every mechanism, the concepts behind them, a traced request |
+| [PROJECT.md](PROJECT.md) | Narrative walkthrough — problem, results, every bug, how to explain it |
 | [DECISIONS.md](DECISIONS.md) | Each design decision, the alternative rejected, and why |
 | [eval/results.md](eval/results.md) | Retrieval analysis and the bug narrative |
 | [eval/citation_results.md](eval/citation_results.md) | Citation and refusal measurements |
